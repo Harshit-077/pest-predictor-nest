@@ -5,6 +5,7 @@ import FeatureSection from '@/components/FeatureSection';
 import PestForm from '@/components/PestForm';
 import PredictionResult from '@/components/PredictionResult';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Info } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -43,6 +44,21 @@ const Index = () => {
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Upload a photo of your plant's leaf and get instant AI assessment of its health status and treatment recommendations.
               </p>
+            </div>
+            
+            <div className="mb-8 max-w-2xl mx-auto p-4 bg-pest-50 rounded-lg border border-pest-100">
+              <div className="flex items-start">
+                <Info className="h-5 w-5 text-pest-600 mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-pest-700 mb-1">About Our Plant Analysis Model</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Our application uses a Vision Transformer (ViT) model to analyze your plant leaf images.
+                    The model examines visual patterns to identify signs of common plant diseases like leaf spots,
+                    powdery mildew, rust, and other conditions. For best results, upload a clear, well-lit image
+                    showing the entire leaf.
+                  </p>
+                </div>
+              </div>
             </div>
             
             <PestForm />
