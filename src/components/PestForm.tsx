@@ -3,49 +3,61 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Thermometer, Droplets, Wind, Calendar, Bug } from 'lucide-react';
+import { Leaf, Upload } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 const PestForm: React.FC = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    location: '',
-    crop: '',
-    temperature: 25,
-    humidity: 60,
-    rainfall: 5,
-    pestType: '',
-    date: new Date().toISOString().split('T')[0]
-  });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target) {
+          setImagePreview(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here is where you would normally send the data to your prediction model
-    console.log("Form submitted with data:", formData);
+    if (!selectedImage) {
+      toast({
+        title: "No image selected",
+        description: "Please upload a leaf image to analyze.",
+        variant: "destructive"
+      });
+      return;
+    }
     
+    setIsUploading(true);
     toast({
-      title: "Data submitted",
-      description: "Your pest data is being analyzed by our ML model.",
+      title: "Processing image",
+      description: "Your leaf image is being analyzed...",
     });
     
-    // For demo purposes, we'll simulate a prediction
+    // Simulate a prediction (in a real app, this would be an API call)
     setTimeout(() => {
+      setIsUploading(false);
       const event = new CustomEvent('prediction-complete', { 
         detail: {
-          pestRisk: Math.random() > 0.5 ? 'high' : 'low',
+          pestRisk: Math.random() > 0.4 ? 'high' : 'low',
           confidence: (Math.random() * 30 + 70).toFixed(1),
-          pestName: formData.pestType || 'Unknown',
+          pestName: Math.random() > 0.5 ? 'Leaf Blight' : 'Powdery Mildew',
           recommendedAction: Math.random() > 0.5 ? 
-            'Apply organic pesticide within 48 hours' : 
-            'Monitor closely, no immediate action required'
+            'Apply organic fungicide within 48 hours' : 
+            'Minor issues detected, monitor closely but no immediate action required'
         }
       });
       document.dispatchEvent(event);
@@ -56,140 +68,56 @@ const PestForm: React.FC = () => {
     <Card className="w-full max-w-2xl mx-auto" id="predict">
       <CardHeader>
         <CardTitle className="text-pest-700 flex items-center">
-          <Bug className="mr-2 h-5 w-5" />
-          Pest Prediction Input
+          <Leaf className="mr-2 h-5 w-5" />
+          Leaf Health Analysis
         </CardTitle>
         <CardDescription>
-          Enter environmental and crop data to predict pest outbreaks
+          Upload a leaf image to check its health status
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input 
-                id="location" 
-                placeholder="Enter your farm location" 
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                className="pest-input"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="crop">Crop Type</Label>
-              <Select onValueChange={(value) => handleChange('crop', value)}>
-                <SelectTrigger id="crop" className="pest-input">
-                  <SelectValue placeholder="Select crop type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="corn">Corn</SelectItem>
-                  <SelectItem value="wheat">Wheat</SelectItem>
-                  <SelectItem value="rice">Rice</SelectItem>
-                  <SelectItem value="soybean">Soybean</SelectItem>
-                  <SelectItem value="cotton">Cotton</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="temperature" className="flex items-center">
-                  <Thermometer className="mr-2 h-4 w-4" />
-                  Temperature (°C)
-                </Label>
-                <span className="text-sm text-pest-700 font-medium">{formData.temperature}°C</span>
-              </div>
-              <Slider 
-                id="temperature"
-                min={-10} 
-                max={50} 
-                step={1}
-                value={[formData.temperature]}
-                onValueChange={(value) => handleChange('temperature', value[0])}
-                className="py-2"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="humidity" className="flex items-center">
-                  <Droplets className="mr-2 h-4 w-4" />
-                  Humidity (%)
-                </Label>
-                <span className="text-sm text-pest-700 font-medium">{formData.humidity}%</span>
-              </div>
-              <Slider 
-                id="humidity"
-                min={0} 
-                max={100} 
-                step={1} 
-                value={[formData.humidity]}
-                onValueChange={(value) => handleChange('humidity', value[0])}
-                className="py-2"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="rainfall" className="flex items-center">
-                  <Wind className="mr-2 h-4 w-4" />
-                  Rainfall (mm/day)
-                </Label>
-                <span className="text-sm text-pest-700 font-medium">{formData.rainfall} mm</span>
-              </div>
-              <Slider 
-                id="rainfall"
-                min={0} 
-                max={50} 
-                step={1}
-                value={[formData.rainfall]}
-                onValueChange={(value) => handleChange('rainfall', value[0])}
-                className="py-2"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="pest-type">Observed Pest (if any)</Label>
-              <Select onValueChange={(value) => handleChange('pestType', value)}>
-                <SelectTrigger id="pest-type" className="pest-input">
-                  <SelectValue placeholder="Select pest type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aphids">Aphids</SelectItem>
-                  <SelectItem value="grasshoppers">Grasshoppers</SelectItem>
-                  <SelectItem value="beetles">Beetles</SelectItem>
-                  <SelectItem value="caterpillars">Caterpillars</SelectItem>
-                  <SelectItem value="mites">Mites</SelectItem>
-                  <SelectItem value="none">None observed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="date" className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4" />
-                Observation Date
-              </Label>
-              <Input 
-                id="date" 
-                type="date" 
-                value={formData.date}
-                onChange={(e) => handleChange('date', e.target.value)}
+          <div className="space-y-2">
+            <Label htmlFor="leaf-image">Upload Leaf Image</Label>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Input
+                id="leaf-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 className="pest-input"
               />
             </div>
+            
+            {imagePreview && (
+              <div className="mt-4 relative">
+                <div className="rounded-md overflow-hidden border border-pest-100 max-h-[300px]">
+                  <img src={imagePreview} alt="Leaf preview" className="w-full object-contain" />
+                </div>
+              </div>
+            )}
           </div>
           
           <CardFooter className="px-0 pt-4">
-            <Button type="submit" className="w-full bg-pest-600 hover:bg-pest-700">
-              Generate Prediction
+            <Button 
+              type="submit" 
+              className="w-full bg-pest-600 hover:bg-pest-700"
+              disabled={!selectedImage || isUploading}
+            >
+              {isUploading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Analyzing...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Analyze Leaf Health
+                </span>
+              )}
             </Button>
           </CardFooter>
         </form>

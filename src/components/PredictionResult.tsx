@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Shield, AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Leaf, AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface PredictionData {
   pestRisk: string;
@@ -46,18 +46,18 @@ const PredictionResult: React.FC = () => {
     <Card className="w-full max-w-2xl mx-auto mt-6">
       <CardHeader>
         <CardTitle className="text-pest-700 flex items-center">
-          <Shield className="mr-2 h-5 w-5" />
-          Pest Prediction Results
+          <Leaf className="mr-2 h-5 w-5" />
+          Leaf Health Analysis Results
         </CardTitle>
         <CardDescription>
-          ML-powered pest risk assessment and recommendations
+          AI-powered leaf health assessment and recommendations
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="space-y-4 py-8">
             <div className="text-center text-muted-foreground">
-              Processing your data with our ML model...
+              Analyzing leaf image with our AI model...
             </div>
             <Progress value={65} className="h-2 bg-pest-100" />
           </div>
@@ -65,8 +65,10 @@ const PredictionResult: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-secondary rounded-lg p-4 text-center">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Risk Level</div>
-                <div className="text-xl font-bold text-pest-700 capitalize">{prediction.pestRisk}</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">Health Status</div>
+                <div className={`text-xl font-bold capitalize ${prediction.pestRisk === 'high' ? 'text-red-600' : 'text-green-600'}`}>
+                  {prediction.pestRisk === 'high' ? 'Unhealthy' : 'Healthy'}
+                </div>
               </div>
               
               <div className="bg-secondary rounded-lg p-4 text-center">
@@ -75,8 +77,10 @@ const PredictionResult: React.FC = () => {
               </div>
               
               <div className="bg-secondary rounded-lg p-4 text-center">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Pest</div>
-                <div className="text-xl font-bold text-pest-700 capitalize">{prediction.pestName}</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">Issue Detected</div>
+                <div className="text-xl font-bold text-pest-700 capitalize">
+                  {prediction.pestRisk === 'high' ? prediction.pestName : 'None'}
+                </div>
               </div>
             </div>
             
@@ -93,7 +97,7 @@ const PredictionResult: React.FC = () => {
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertTitle className="text-green-800">Low Risk Detected</AlertTitle>
+                  <AlertTitle className="text-green-800">Healthy Leaf Detected</AlertTitle>
                 </>
               )}
               <AlertDescription className={
@@ -109,9 +113,9 @@ const PredictionResult: React.FC = () => {
               <div className="flex items-start">
                 <AlertCircle className="h-5 w-5 text-pest-600 mt-0.5 mr-2" />
                 <div>
-                  <h4 className="text-sm font-medium text-pest-700">Prediction Insights</h4>
+                  <h4 className="text-sm font-medium text-pest-700">Analysis Insights</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    This prediction is based on environmental factors, historical pest data, and crop susceptibility analysis. Regular monitoring is still recommended as conditions may change.
+                    This analysis is based on visual patterns in your leaf image. For more accurate results, ensure images are well-lit and clearly show any problem areas.
                   </p>
                 </div>
               </div>
