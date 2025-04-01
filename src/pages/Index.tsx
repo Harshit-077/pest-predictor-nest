@@ -4,6 +4,7 @@ import PestHeader from '@/components/PestHeader';
 import FeatureSection from '@/components/FeatureSection';
 import PestForm from '@/components/PestForm';
 import PredictionResult from '@/components/PredictionResult';
+import ModelInstructions from '@/components/ModelInstructions';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Index = () => {
@@ -45,6 +46,7 @@ const Index = () => {
               </p>
             </div>
             
+            <ModelInstructions />
             <PestForm />
             <PredictionResult />
           </section>

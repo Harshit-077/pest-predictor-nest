@@ -1,17 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Leaf, Upload } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { predictLeafHealth } from "@/services/modelService";
 
 const PestForm: React.FC = () => {
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  
+  // Update this path to where you'll store your model
+  const MODEL_URL = '/models/leaf_health_model/model.json';
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -29,7 +34,7 @@ const PestForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedImage) {
@@ -47,21 +52,51 @@ const PestForm: React.FC = () => {
       description: "Your leaf image is being analyzed...",
     });
     
-    // Simulate a prediction (in a real app, this would be an API call)
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      // Wait for the image to fully load before analysis
+      if (!imageRef.current || !imageRef.current.complete) {
+        await new Promise(resolve => {
+          if (imageRef.current) {
+            imageRef.current.onload = resolve;
+          } else {
+            resolve(null);
+          }
+        });
+      }
+      
+      if (!imageRef.current) {
+        throw new Error("Image reference is not available");
+      }
+      
+      // Analyze the image using the model
+      const result = await predictLeafHealth(imageRef.current, MODEL_URL);
+      
+      // Convert result to the format expected by PredictionResult component
+      const predictionData = {
+        pestRisk: result.isHealthy ? 'low' : 'high',
+        confidence: result.confidence.toFixed(1),
+        pestName: result.pestName || 'None',
+        recommendedAction: result.isHealthy ? 
+          'Your plant appears healthy. Continue regular care.' : 
+          `Possible ${result.pestName} detected. Consider treating with appropriate fungicide.`
+      };
+      
+      // Dispatch event to update the prediction result component
       const event = new CustomEvent('prediction-complete', { 
-        detail: {
-          pestRisk: Math.random() > 0.4 ? 'high' : 'low',
-          confidence: (Math.random() * 30 + 70).toFixed(1),
-          pestName: Math.random() > 0.5 ? 'Leaf Blight' : 'Powdery Mildew',
-          recommendedAction: Math.random() > 0.5 ? 
-            'Apply organic fungicide within 48 hours' : 
-            'Minor issues detected, monitor closely but no immediate action required'
-        }
+        detail: predictionData
       });
       document.dispatchEvent(event);
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis failed",
+        description: "There was an error analyzing your image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -92,7 +127,12 @@ const PestForm: React.FC = () => {
             {imagePreview && (
               <div className="mt-4 relative">
                 <div className="rounded-md overflow-hidden border border-pest-100 max-h-[300px]">
-                  <img src={imagePreview} alt="Leaf preview" className="w-full object-contain" />
+                  <img 
+                    ref={imageRef}
+                    src={imagePreview} 
+                    alt="Leaf preview" 
+                    className="w-full object-contain" 
+                  />
                 </div>
               </div>
             )}
