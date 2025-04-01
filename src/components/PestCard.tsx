@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bug, Thermometer, Droplets, Plant, AlertTriangle } from 'lucide-react';
+import { Bug, Thermometer, Droplets, Leaf, AlertTriangle } from 'lucide-react';
 
 interface PestCardProps {
   name: string;
@@ -68,7 +68,7 @@ const PestCard: React.FC<PestCardProps> = ({
             </span>
           </div>
           <div className="flex items-center">
-            <Plant className="h-4 w-4 text-pest-500 mr-1" />
+            <Leaf className="h-4 w-4 text-pest-500 mr-1" />
             <span className="text-muted-foreground">
               {targetCrops.join(', ')}
             </span>
