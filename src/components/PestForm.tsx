@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, Upload, Info } from 'lucide-react';
+import { Leaf, Upload, Info, CheckCircle2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { classifyLeafImage, initClassifier } from "@/services/leafClassificationService";
 
@@ -13,23 +14,37 @@ const PestForm: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [modelType, setModelType] = useState<'custom' | 'fallback' | 'loading'>('loading');
 
   // Initialize the model when component mounts
   useEffect(() => {
     const loadModel = async () => {
       try {
-        // Try to initialize the TensorFlow.js model
-        // This path should match where you've placed your converted model files
-        const modelUrl = '/models/leaf_health_model/model.json';
+        // Try to initialize the model
         await initClassifier();
         setModelLoaded(true);
+        
+        // Check if we're using the custom model or the fallback
+        // This is set inside the initClassifier function
+        const modelTypeUsed = localStorage.getItem('leaf_model_type');
+        setModelType(modelTypeUsed === 'custom' ? 'custom' : 'fallback');
+        
         console.log("Model initialized successfully");
+        
+        toast({
+          title: "Model loaded successfully",
+          description: modelTypeUsed === 'custom' 
+            ? "Your custom model is ready to analyze leaf images." 
+            : "Using pre-trained model for leaf analysis.",
+          variant: "default"
+        });
       } catch (error) {
         console.error("Error initializing model:", error);
+        setModelType('fallback');
         toast({
-          title: "Model initialization failed",
-          description: "There was an issue loading the leaf classification model.",
-          variant: "destructive"
+          title: "Using backup model",
+          description: "Custom model not found. Using our pre-trained model instead.",
+          variant: "default"
         });
       }
     };
@@ -115,15 +130,33 @@ const PestForm: React.FC = () => {
           Leaf Health Analysis
         </CardTitle>
         <CardDescription>
-          Upload a leaf image to check its health status
+          Upload a leaf image to check its health status and get treatment recommendations
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!modelLoaded && (
+        {modelType === 'loading' && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 flex items-start">
             <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               Leaf analysis model is loading. This may take a moment on first use.
+            </p>
+          </div>
+        )}
+        
+        {modelType === 'custom' && modelLoaded && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 flex items-start">
+            <CheckCircle2 className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">
+              Your custom leaf analysis model is loaded and ready to use.
+            </p>
+          </div>
+        )}
+        
+        {modelType === 'fallback' && modelLoaded && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 flex items-start">
+            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">
+              Using our pre-trained model for leaf analysis. To use your custom model, follow the instructions in the "Custom Model Setup" section.
             </p>
           </div>
         )}

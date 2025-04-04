@@ -73,14 +73,22 @@ export const predictLeafHealth = async (imageElement: HTMLImageElement, modelUrl
     processedImage.dispose();
     predictions.dispose();
     
-    // Process results based on your model output format
-    // Adjust this section based on your specific model output structure
+    // Process results
     const confidenceValue = Math.max(...Array.from(values));
     const classIndex = Array.from(values).indexOf(confidenceValue);
     
-    // Example mapping - adjust based on your model's classes
-    const isHealthy = classIndex === 0; // Assuming 0 is healthy in your model
-    const pestTypes = ['None', 'Leaf Blight', 'Powdery Mildew', 'Rust', 'Leaf Spot', 'Mosaic Virus'];
+    // Assuming class 0 is healthy in your model
+    const isHealthy = classIndex === 0;
+    
+    // You may need to adjust these based on your actual model's class mapping
+    const pestTypes = [
+      'None', 
+      'Leaf Blight', 
+      'Powdery Mildew', 
+      'Rust', 
+      'Leaf Spot', 
+      'Mosaic Virus'
+    ];
     
     // Get treatment recommendations based on the detected issue
     const pestName = isHealthy ? undefined : pestTypes[classIndex] || 'Unknown Disease';
