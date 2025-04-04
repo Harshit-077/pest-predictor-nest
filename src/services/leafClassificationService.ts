@@ -1,4 +1,4 @@
-
+import { getTreatmentRecommendations, predictLeafHealth } from './modelService';
 import { pipeline, env } from "@huggingface/transformers";
 
 // Configure the transformers.js environment
@@ -7,6 +7,7 @@ env.useBrowserCache = true;
 
 // Model information
 const MODEL_ID = "Xenova/vit-base-patch16-224";
+const TENSORFLOWJS_MODEL_URL = '/models/leaf_health_model/model.json';
 
 // Create a singleton pipeline instance
 let classifierInstance: any = null;
@@ -18,9 +19,19 @@ export const initClassifier = async () => {
   if (!classifierInstance) {
     try {
       console.log("Loading leaf classification model...");
-      classifierInstance = await pipeline("image-classification", MODEL_ID);
-      console.log("Model loaded successfully!");
-      return true;
+      // Try to use the TensorFlow.js model first, fall back to Hugging Face if that fails
+      try {
+        // Attempt to load the TensorFlow.js model
+        await predictLeafHealth(new Image(), TENSORFLOWJS_MODEL_URL);
+        console.log("Custom TensorFlow.js model loaded successfully!");
+        return true;
+      } catch (tfError) {
+        console.warn("Failed to load custom model, falling back to Hugging Face model:", tfError);
+        // Fall back to Hugging Face model
+        classifierInstance = await pipeline("image-classification", MODEL_ID);
+        console.log("Hugging Face model loaded successfully!");
+        return true;
+      }
     } catch (error) {
       console.error("Error loading model:", error);
       return false;
@@ -34,65 +45,88 @@ export const initClassifier = async () => {
  * @param imageUrl URL of the image to classify
  */
 export const classifyLeafImage = async (imageUrl: string) => {
-  if (!classifierInstance) {
-    const initialized = await initClassifier();
-    if (!initialized) {
-      throw new Error("Failed to initialize the model");
-    }
-  }
-
   try {
-    // Classify the image
-    const results = await classifierInstance(imageUrl);
-    
-    // Process results
-    // The model classifies general objects, so we'll map them to leaf health status
-    // This is a simplified approach - a specialized leaf health model would be better
-    
-    // Here we check if common plant disease indicators are found
-    const diseaseKeywords = ["mold", "blight", "rust", "spot", "rot", "disease", "mildew"];
-    const healthyKeywords = ["leaf", "plant", "green", "healthy", "foliage"];
-    
-    let isHealthy = true;
-    let confidence = 0;
-    let detectedIssue = "";
-    
-    // Check all classifications for disease indicators
-    for (const prediction of results) {
-      const label = prediction.label.toLowerCase();
+    // Try using the TensorFlow.js model first
+    try {
+      // Load the image
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
       
-      // Check for disease keywords
-      for (const keyword of diseaseKeywords) {
-        if (label.includes(keyword)) {
-          isHealthy = false;
-          confidence = prediction.score * 100;
-          detectedIssue = formatIssueName(label);
-          break;
+      // Use our custom model
+      const result = await predictLeafHealth(img, TENSORFLOWJS_MODEL_URL);
+      
+      // Get treatment recommendations
+      const recommendations = getTreatmentRecommendations(result.pestName);
+      
+      return {
+        isHealthy: result.isHealthy,
+        confidence: result.confidence,
+        pestName: result.pestName || "",
+        recommendations
+      };
+    } catch (tfError) {
+      console.warn("Custom model prediction failed, falling back to Hugging Face:", tfError);
+      
+      // Fall back to Hugging Face model if TensorFlow.js model fails
+      if (!classifierInstance) {
+        const initialized = await initClassifier();
+        if (!initialized) {
+          throw new Error("Failed to initialize the model");
         }
       }
       
-      // If already found unhealthy, break
-      if (!isHealthy) break;
+      // Classify using Hugging Face model
+      const results = await classifierInstance(imageUrl);
       
-      // Check for healthy indicators with higher confidence
-      for (const keyword of healthyKeywords) {
-        if (label.includes(keyword) && prediction.score > 0.7) {
-          isHealthy = true;
-          confidence = prediction.score * 100;
-          break;
+      // Process results as before
+      const diseaseKeywords = ["mold", "blight", "rust", "spot", "rot", "disease", "mildew"];
+      const healthyKeywords = ["leaf", "plant", "green", "healthy", "foliage"];
+      
+      let isHealthy = true;
+      let confidence = 0;
+      let detectedIssue = "";
+      
+      // Check all classifications for disease indicators
+      for (const prediction of results) {
+        const label = prediction.label.toLowerCase();
+        
+        // Check for disease keywords
+        for (const keyword of diseaseKeywords) {
+          if (label.includes(keyword)) {
+            isHealthy = false;
+            confidence = prediction.score * 100;
+            detectedIssue = formatIssueName(label);
+            break;
+          }
+        }
+        
+        // If already found unhealthy, break
+        if (!isHealthy) break;
+        
+        // Check for healthy indicators with higher confidence
+        for (const keyword of healthyKeywords) {
+          if (label.includes(keyword) && prediction.score > 0.7) {
+            isHealthy = true;
+            confidence = prediction.score * 100;
+            break;
+          }
         }
       }
+      
+      // Generate treatment recommendations
+      const recommendations = getTreatmentRecommendations(detectedIssue);
+      
+      return {
+        isHealthy,
+        confidence,
+        pestName: isHealthy ? "" : detectedIssue,
+        recommendations
+      };
     }
-    
-    // Generate treatment recommendations based on detected issue
-    const recommendations = generateRecommendations(detectedIssue);
-    
-    return {
-      isHealthy,
-      confidence,
-      pestName: isHealthy ? "" : detectedIssue,
-      recommendations
-    };
   } catch (error) {
     console.error("Error classifying image:", error);
     throw error;

@@ -4,6 +4,7 @@ import PestHeader from '@/components/PestHeader';
 import FeatureSection from '@/components/FeatureSection';
 import PestForm from '@/components/PestForm';
 import PredictionResult from '@/components/PredictionResult';
+import ModelInstructions from '@/components/ModelInstructions';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Info } from 'lucide-react';
 
@@ -36,6 +37,17 @@ const Index = () => {
           
           {/* Features Section */}
           <FeatureSection />
+          
+          {/* Model Instructions Section */}
+          <section className="py-10 container mx-auto px-4" id="model-setup">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-pest-700 mb-3">Custom Model Setup</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Instructions for integrating your custom .h5 model with our application
+              </p>
+            </div>
+            <ModelInstructions />
+          </section>
           
           {/* Prediction Form Section */}
           <section className="py-16 container mx-auto px-4">

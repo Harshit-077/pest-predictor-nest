@@ -74,21 +74,43 @@ export const predictLeafHealth = async (imageElement: HTMLImageElement, modelUrl
     predictions.dispose();
     
     // Process results based on your model output format
-    // This needs to be adjusted based on your specific model output structure
+    // Adjust this section based on your specific model output structure
     const confidenceValue = Math.max(...Array.from(values));
     const classIndex = Array.from(values).indexOf(confidenceValue);
     
     // Example mapping - adjust based on your model's classes
     const isHealthy = classIndex === 0; // Assuming 0 is healthy in your model
-    const pestTypes = ['None', 'Leaf Blight', 'Powdery Mildew', 'Rust']; // Adjust based on your model's classes
+    const pestTypes = ['None', 'Leaf Blight', 'Powdery Mildew', 'Rust', 'Leaf Spot', 'Mosaic Virus'];
+    
+    // Get treatment recommendations based on the detected issue
+    const pestName = isHealthy ? undefined : pestTypes[classIndex] || 'Unknown Disease';
     
     return {
       isHealthy,
       confidence: confidenceValue * 100,
-      pestName: isHealthy ? undefined : pestTypes[classIndex]
+      pestName
     };
   } catch (error) {
     console.error('Prediction error:', error);
     throw error;
   }
+};
+
+// Helper function to generate treatment recommendations based on detected issues
+export const getTreatmentRecommendations = (pestName?: string): string => {
+  if (!pestName) {
+    return "Your plant appears healthy. Continue regular care with adequate water, light, and nutrients.";
+  }
+  
+  // Treatment recommendations for common plant diseases
+  const recommendations: Record<string, string> = {
+    'Leaf Blight': "Remove affected leaves and ensure good air circulation. Apply a copper-based fungicide and avoid overhead watering. Improve soil drainage and avoid overwatering.",
+    'Powdery Mildew': "Increase air circulation, apply neem oil or a sulfur-based fungicide, and avoid overhead watering. Remove severely affected leaves and keep foliage dry.",
+    'Rust': "Remove and destroy affected leaves. Apply a fungicide containing myclobutanil or sulfur, and ensure proper spacing between plants. Avoid wetting leaves during irrigation.",
+    'Leaf Spot': "Remove affected leaves and ensure good air circulation. Apply a copper-based fungicide and avoid overhead watering. Practice crop rotation if in a garden setting.",
+    'Mosaic Virus': "Unfortunately, there's no cure for mosaic virus. Remove and destroy infected plants to prevent spread to healthy plants. Control aphids and other insects that may spread the virus.",
+    'Unknown Disease': "Isolate the affected plant from others to prevent potential spread. Remove visibly affected leaves. Consider consulting with a plant specialist or agricultural extension service for precise diagnosis and treatment."
+  };
+  
+  return recommendations[pestName] || "Consult with a plant specialist for diagnosis. Meanwhile, isolate the plant from others, remove visibly affected leaves, and avoid overwatering.";
 };

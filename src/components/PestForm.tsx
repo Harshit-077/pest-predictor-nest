@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,24 +18,17 @@ const PestForm: React.FC = () => {
   useEffect(() => {
     const loadModel = async () => {
       try {
-        const success = await initClassifier();
-        setModelLoaded(success);
-        
-        if (success) {
-          console.log("Model initialized successfully");
-        } else {
-          console.error("Failed to initialize model");
-          toast({
-            title: "Model initialization failed",
-            description: "There was an issue loading the leaf classification model.",
-            variant: "destructive"
-          });
-        }
+        // Try to initialize the TensorFlow.js model
+        // This path should match where you've placed your converted model files
+        const modelUrl = '/models/leaf_health_model/model.json';
+        await initClassifier();
+        setModelLoaded(true);
+        console.log("Model initialized successfully");
       } catch (error) {
         console.error("Error initializing model:", error);
         toast({
-          title: "Model initialization error",
-          description: "There was an error loading the leaf classification model.",
+          title: "Model initialization failed",
+          description: "There was an issue loading the leaf classification model.",
           variant: "destructive"
         });
       }
@@ -83,7 +75,7 @@ const PestForm: React.FC = () => {
       // Create a URL for the image
       const imageUrl = URL.createObjectURL(selectedImage);
       
-      // Analyze the image using our Hugging Face model
+      // Analyze the image using our model
       const result = await classifyLeafImage(imageUrl);
       
       // Convert result to the format expected by PredictionResult component
